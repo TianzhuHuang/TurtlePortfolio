@@ -1,0 +1,33 @@
+{
+  "date": "2025-11-12",
+  "holdings": [
+    {
+      "name": "贵州茅台",
+      "symbol": "600519",
+      "quantity": 100,
+      "cost_price": 1800,
+      "market_value": 2430000
+    },
+    {
+      "name": "宁德时代",
+      "symbol": "300750",
+      "quantity": 180,
+      "cost_price": 620,
+      "market_value": 1116000
+    },
+    {
+      "name": "招商银行",
+      "symbol": "600036",
+      "quantity": 2000,
+      "cost_price": 35.2,
+      "market_value": 728000
+    },
+    {
+      "name": "中国中免",
+      "symbol": "601888",
+      "quantity": 300,
+      "cost_price": 90.5,
+      "market_value": 315000
+    }
+  ]
+}
