@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -31,8 +31,11 @@ class Investor(Base, TimestampMixin):
     initial_investment = Column(Float, nullable=False, default=0.0)
     shares = Column(Float, nullable=False, default=0.0)
     current_value = Column(Float, nullable=False, default=0.0)
+    password_hash = Column(String(128), nullable=False)
+    is_admin = Column(Boolean, nullable=False, default=False)
 
     histories = relationship("FundHistory", back_populates="created_by", viewonly=True)
+    tokens = relationship("InvestorToken", back_populates="investor")
 
 
 class Holding(Base, TimestampMixin):
@@ -68,3 +71,16 @@ class FundCash(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Float, nullable=False, default=0.0)
 
+
+class InvestorToken(Base, TimestampMixin):
+    __tablename__ = "investor_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String(255), nullable=False, unique=True, index=True)
+    investor_id = Column(Integer, ForeignKey("investors.id"), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    ip_address = Column(String(45), nullable=True)
+    
+    investor = relationship("Investor", back_populates="tokens")

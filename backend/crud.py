@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Iterable, List, Optional
+import secrets
 
 from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
@@ -9,6 +10,18 @@ from sqlalchemy.orm import Session
 from loguru import logger
 
 from . import models, schemas
+
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_latest_holdings(db: Session) -> Optional[schemas.HoldingsResponse]:
@@ -26,7 +39,7 @@ def get_latest_holdings(db: Session) -> Optional[schemas.HoldingsResponse]:
         .where(models.Holding.date == latest_date)
         .order_by(desc(models.Holding.market_value))
     )
-    holdings = [holding for holding, in db.execute(holdings_stmt)]
+    holdings = [holding for holding, in db.execute(holding_stmt)]
     total_value = sum(h.market_value for h in holdings)
     return schemas.HoldingsResponse(
         date=latest_date,
@@ -81,7 +94,26 @@ def get_investor(db: Session, investor_id: int) -> Optional[models.Investor]:
     return db.execute(stmt).scalar_one_or_none()
 
 
-def create_investor(db: Session, payload: schemas.InvestorCreate) -> models.Investor:
+def get_investor_by_identifier(db: Session, identifier: str) -> Optional[models.Investor]:
+    stmt = select(models.Investor).where(models.Investor.identifier == identifier)
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def authenticate_investor(db: Session, identifier: str, password: str) -> Optional[models.Investor]:
+    investor = get_investor_by_identifier(db, identifier)
+    if not investor or not verify_password(password, investor.password_hash):
+        return None
+    return investor
+
+
+def create_investor(db: Session, payload: schemas.InvestorCreate, current_investor: Optional[models.Investor] = None) -> models.Investor:
+    # 检查是否有当前用户且尝试设置管理员权限
+    is_admin = payload.is_admin if hasattr(payload, 'is_admin') else False
+    
+    # 如果要创建管理员用户，但当前用户不是管理员，则不能设置为管理员
+    if is_admin and current_investor and not current_investor.is_admin:
+        raise PermissionError("Only administrators can create other administrators")
+
     identifier = (payload.identifier or "").strip() or None
     investor = models.Investor(
         name=payload.name,
@@ -89,6 +121,8 @@ def create_investor(db: Session, payload: schemas.InvestorCreate) -> models.Inve
         initial_investment=payload.initial_investment,
         shares=payload.shares,
         current_value=payload.shares,  # assumes initial NAV of 1.0
+        password_hash=get_password_hash(payload.password),
+        is_admin=is_admin
     )
     db.add(investor)
     db.commit()
@@ -102,16 +136,31 @@ def update_investor(
     db: Session,
     investor: models.Investor,
     payload: schemas.InvestorUpdate,
+    current_investor: Optional[models.Investor] = None
 ) -> models.Investor:
     update_data = payload.dict(exclude_unset=True)
+    
+    # 检查是否试图修改管理员权限
+    if "is_admin" in update_data and current_investor and not current_investor.is_admin:
+        raise PermissionError("Only administrators can change administrator permissions")
+        
     if "identifier" in update_data:
         raw_identifier = update_data["identifier"] or ""
         update_data["identifier"] = raw_identifier.strip() or None
+        
     for field, value in update_data.items():
         setattr(investor, field, value)
+        
     db.commit()
     db.refresh(investor)
     _recalculate_nav_with_latest_holdings(db)
+    db.refresh(investor)
+    return investor
+
+
+def update_investor_password(db: Session, investor: models.Investor, new_password: str) -> models.Investor:
+    investor.password_hash = get_password_hash(new_password)
+    db.commit()
     db.refresh(investor)
     return investor
 
@@ -120,6 +169,58 @@ def delete_investor(db: Session, investor: models.Investor) -> None:
     db.delete(investor)
     db.commit()
     _recalculate_nav_with_latest_holdings(db)
+
+
+def create_investor_token(
+    db: Session, 
+    investor_id: int, 
+    user_agent: Optional[str] = None, 
+    ip_address: Optional[str] = None,
+    expires_in: int = 24 * 60 * 60  # 默认24小时
+) -> models.InvestorToken:
+    """创建一个新的投资者令牌"""
+    token = secrets.token_urlsafe(32)  # 生成安全的随机令牌
+    expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+    
+    investor_token = models.InvestorToken(
+        token=token,
+        investor_id=investor_id,
+        expires_at=expires_at,
+        user_agent=user_agent,
+        ip_address=ip_address
+    )
+    
+    db.add(investor_token)
+    db.commit()
+    db.refresh(investor_token)
+    return investor_token
+
+
+def get_investor_token(db: Session, token: str) -> Optional[models.InvestorToken]:
+    """根据令牌字符串获取投资者令牌"""
+    stmt = select(models.InvestorToken).where(models.InvestorToken.token == token)
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def delete_investor_token(db: Session, token: str) -> bool:
+    """删除指定的投资者令牌"""
+    investor_token = get_investor_token(db, token)
+    if investor_token:
+        db.delete(investor_token)
+        db.commit()
+        return True
+    return False
+
+
+def cleanup_expired_tokens(db: Session) -> int:
+    """清理过期的令牌，返回清理的数量"""
+    expired_tokens = db.query(models.InvestorToken).filter(
+        models.InvestorToken.expires_at < datetime.utcnow()
+    )
+    count = expired_tokens.count()
+    expired_tokens.delete()
+    db.commit()
+    return count
 
 
 def get_initial_total_investment(db: Session) -> float:
@@ -263,4 +364,3 @@ def _recalculate_nav_with_latest_holdings(db: Session) -> None:
         )
     except ValueError as exc:
         logger.warning("NAV recalculation skipped: %s", exc)
-

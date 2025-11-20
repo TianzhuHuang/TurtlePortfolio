@@ -37,10 +37,11 @@ class InvestorBase(BaseModel):
     identifier: Optional[str] = None
     initial_investment: float = Field(..., ge=0)
     shares: float = Field(..., ge=0)
+    is_admin: bool = False
 
 
 class InvestorCreate(InvestorBase):
-    pass
+    password: str = Field(..., min_length=6)
 
 
 class InvestorUpdate(BaseModel):
@@ -48,6 +49,7 @@ class InvestorUpdate(BaseModel):
     identifier: Optional[str] = None
     initial_investment: Optional[float] = Field(None, ge=0)
     shares: Optional[float] = Field(None, ge=0)
+    is_admin: Optional[bool] = None
 
 
 class InvestorRead(InvestorBase, TimestampModel):
@@ -110,3 +112,34 @@ class CashBalance(TimestampModel):
 class CashUpdate(BaseModel):
     amount: float = Field(..., ge=0)
 
+
+class LoginRequest(BaseModel):
+    identifier: str
+    password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+class InvestorTokenBase(BaseModel):
+    token: str
+    investor_id: int
+    expires_at: datetime
+    last_used_at: Optional[datetime] = None
+    user_agent: Optional[str] = None
+    ip_address: Optional[str] = None
+
+
+class InvestorTokenCreate(InvestorTokenBase):
+    pass
+
+
+class InvestorTokenRead(InvestorTokenBase, TimestampModel):
+    id: int
+
+
+class LoginResponse(BaseModel):
+    investor: InvestorRead
+    token: InvestorTokenRead

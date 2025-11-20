@@ -1,6 +1,6 @@
 fastapi==0.115.4
 uvicorn[standard]==0.32.0
-SQLAlchemy==2.0.25
+SQLAlchemy==2.0.44
 pydantic==1.10.18
 python-dotenv==1.0.1
 apscheduler==3.10.4
@@ -8,6 +8,7 @@ loguru==0.7.2
 requests==2.32.3
 pandas==2.2.3
 tushare==1.4.24
-python-multipart==0.0.9
-psycopg2-binary==2.9.9
-
+python-multipart==0.0.19
+psycopg2-binary==2.9.11
+passlib==1.7.4
+bcrypt==4.2.1
