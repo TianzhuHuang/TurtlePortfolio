@@ -67,7 +67,7 @@ def logout(
 @router.put("/change-password", response_model=schemas.InvestorRead)
 def change_password(
     payload: schemas.ChangePasswordRequest,
-    token: str = Header("user-token"),
+    token: str = Header(alias="user-token"),
     db: Session = Depends(get_db)
 ) -> schemas.InvestorRead:
     # 检查令牌是否存在

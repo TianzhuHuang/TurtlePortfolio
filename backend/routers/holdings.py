@@ -4,7 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from .. import crud, schemas
+from .dependencies import get_current_admin_investor, get_current_investor
+from .. import crud, schemas, models
 from ..database import get_db
 
 
@@ -12,7 +13,10 @@ router = APIRouter()
 
 
 @router.get("/today", response_model=Optional[schemas.HoldingsResponse])
-def read_latest_holdings(db: Session = Depends(get_db)) -> Optional[schemas.HoldingsResponse]:
+def read_latest_holdings(
+    db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_investor),
+) -> Optional[schemas.HoldingsResponse]:
     """
     Fetch the most recent holdings snapshot.
     """
@@ -20,7 +24,11 @@ def read_latest_holdings(db: Session = Depends(get_db)) -> Optional[schemas.Hold
 
 
 @router.get("/by-date/{target_date}", response_model=list[schemas.HoldingRead])
-def read_holdings_by_date(target_date: date, db: Session = Depends(get_db)) -> list[schemas.HoldingRead]:
+def read_holdings_by_date(
+    target_date: date,
+    db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_investor),
+) -> list[schemas.HoldingRead]:
     """
     Fetch holdings for a specific trading date.
     """
@@ -35,6 +43,7 @@ def upsert_holdings(
     payload: schemas.ManualHoldingsPayload,
     overwrite: bool = Query(True, description="Replace existing holdings for the given date."),
     db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_admin_investor),
 ) -> schemas.FundSummary:
     """
     Allow manual upload of holdings data (e.g., CSV import or admin edits).

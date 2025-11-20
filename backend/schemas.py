@@ -50,6 +50,7 @@ class InvestorUpdate(BaseModel):
     initial_investment: Optional[float] = Field(None, ge=0)
     shares: Optional[float] = Field(None, ge=0)
     is_admin: Optional[bool] = None
+    password: Optional[str] = Field(None, min_length=6)
 
 
 class InvestorRead(InvestorBase, TimestampModel):

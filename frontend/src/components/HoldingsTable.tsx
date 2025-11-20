@@ -21,6 +21,7 @@ export interface HoldingsTableProps {
   holdings: Holding[];
   totalValue?: number;
   cashAmount: number;
+  totalAssets: number;
   onSaveCash: (amount: number) => Promise<void>;
 }
 

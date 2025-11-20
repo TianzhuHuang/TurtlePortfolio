@@ -13,15 +13,19 @@ interface InvestorFormState {
   id?: number;
   name: string;
   identifier?: string;
-  initial_investment: number;
-  shares: number;
+  initial_investment?: number;
+  shares?: number;
+  is_admin: boolean;
+  password?: string;
 }
 
 const defaultFormState: InvestorFormState = {
   name: "",
   identifier: "",
-  initial_investment: 0,
-  shares: 0,
+  // initial_investment: 0,
+  // shares: 0,
+  is_admin: false,
+  password: "",
 };
 
 export function InvestorsAdminPanel({
@@ -68,6 +72,7 @@ export function InvestorsAdminPanel({
       identifier: investor.identifier ?? "",
       initial_investment: investor.initial_investment,
       shares: investor.shares,
+      is_admin: investor.is_admin || false,
     });
     setIsDialogOpen(true);
   };
@@ -90,21 +95,28 @@ export function InvestorsAdminPanel({
         setError("请填写投资人姓名。");
         return;
       }
-      const identifier = formState.identifier?.trim() || undefined;
+      
+      const payload: any = {
+        name,
+        identifier: formState.identifier?.trim() || undefined,
+        initial_investment: formState.initial_investment,
+        shares: formState.shares,
+        is_admin: formState.is_admin,
+      };
+      
+      // 如果是创建新用户或者设置了新密码，则包含密码字段
+      if (!formState.id && formState.password) {
+        payload.password = formState.password;
+      }
+
       if (formState.id) {
-        await apiClient.put(`/investors/${formState.id}`, {
-          name,
-          identifier,
-          initial_investment: formState.initial_investment,
-          shares: formState.shares,
-        });
+        await apiClient.put(`/investors/${formState.id}`, payload);
       } else {
-        await apiClient.post("/investors", {
-          name,
-          identifier,
-          initial_investment: formState.initial_investment,
-          shares: formState.shares,
-        });
+        if (!formState.password) {
+          setError("请设置密码。");
+          return;
+        }
+        await apiClient.post("/investors", payload);
       }
       setIsDialogOpen(false);
       await loadData();
@@ -153,6 +165,7 @@ export function InvestorsAdminPanel({
               <th className="px-3 py-2 text-right font-normal">初始投资</th>
               <th className="px-3 py-2 text-right font-normal">份额</th>
               <th className="px-3 py-2 text-right font-normal">当前市值</th>
+              <th className="px-3 py-2 text-right font-normal">管理员</th>
               <th className="px-3 py-2 text-right font-normal">操作</th>
             </tr>
           </thead>
@@ -188,6 +201,17 @@ export function InvestorsAdminPanel({
                   })}
                 </td>
                 <td className="px-3 py-2 text-right">
+                  {investor.is_admin ? (
+                    <span className="inline-flex items-center rounded-full bg-green-900/30 px-2 py-1 text-xs font-medium text-green-400">
+                      是
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-slate-700 px-2 py-1 text-xs font-medium text-slate-400">
+                      否
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right">
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
@@ -211,7 +235,7 @@ export function InvestorsAdminPanel({
         </table>
         {!isLoading && investors.length === 0 && (
           <p className="py-6 text-center text-sm text-slate-400">
-            暂无数据，请先点击“同步最新数据”或新增投资人。
+            暂无数据，请先点击"同步最新数据"或新增投资人。
           </p>
         )}
       </div>
@@ -335,6 +359,39 @@ export function InvestorsAdminPanel({
                         className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:border-sky-500 focus:outline-none"
                       />
                     </label>
+                    <label className="block">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formState.is_admin}
+                          onChange={(event) =>
+                            setFormState((prev) => ({
+                              ...prev,
+                              is_admin: event.target.checked,
+                            }))
+                          }
+                          className="mr-2 h-4 w-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500"
+                        />
+                        <span>管理员权限</span>
+                      </div>
+                    </label>
+                    {(
+                      <label className="block">
+                        密码
+                        <input
+                          type="password"
+                          value={formState.password || ""}
+                          onChange={(event) =>
+                            setFormState((prev) => ({
+                              ...prev,
+                              password: event.target.value,
+                            }))
+                          }
+                          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:border-sky-500 focus:outline-none"
+                          placeholder="请输入密码"
+                        />
+                      </label>
+                    )}
                   </div>
                   <div className="mt-6 flex justify-end gap-3">
                     <button
@@ -361,4 +418,3 @@ export function InvestorsAdminPanel({
     </div>
   );
 }
-

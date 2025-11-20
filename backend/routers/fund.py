@@ -4,7 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from .. import crud, schemas
+from .dependencies import get_current_admin_investor, get_current_investor
+from .. import crud, schemas, models
 from ..database import get_db
 
 
@@ -12,7 +13,10 @@ router = APIRouter()
 
 
 @router.get("/nav", response_model=Optional[schemas.FundSummary])
-def get_latest_nav(db: Session = Depends(get_db)) -> Optional[schemas.FundSummary]:
+def get_latest_nav(
+    db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_investor),
+) -> Optional[schemas.FundSummary]:
     latest_history = crud.get_latest_fund_history(db)
     if not latest_history:
         return None
@@ -28,7 +32,11 @@ def get_latest_nav(db: Session = Depends(get_db)) -> Optional[schemas.FundSummar
 
 
 @router.get("/history", response_model=list[schemas.FundHistoryRead])
-def get_history(limit: int = Query(60, ge=1, le=365), db: Session = Depends(get_db)) -> list[schemas.FundHistoryRead]:
+def get_history(
+    limit: int = Query(60, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_investor),
+) -> list[schemas.FundHistoryRead]:
     history = crud.get_fund_history(db, limit=limit)
     return [schemas.FundHistoryRead.from_orm(record) for record in history]
 
@@ -37,6 +45,7 @@ def get_history(limit: int = Query(60, ge=1, le=365), db: Session = Depends(get_
 def recalculate_nav(
     holdings_date: Optional[date] = None,
     db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_admin_investor),
 ) -> schemas.FundSummary:
     target_date = holdings_date or date.today()
     holdings = crud.get_holdings_by_date(db, target_date)
@@ -59,7 +68,10 @@ def recalculate_nav(
 
 
 @router.get("/cash", response_model=schemas.CashBalance)
-def read_cash_balance(db: Session = Depends(get_db)) -> schemas.CashBalance:
+def read_cash_balance(
+    db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_investor)
+) -> schemas.CashBalance:
     cash = crud.get_cash_balance(db)
     return schemas.CashBalance(
         amount=cash.amount,
@@ -72,6 +84,7 @@ def read_cash_balance(db: Session = Depends(get_db)) -> schemas.CashBalance:
 def update_cash_balance(
     payload: schemas.CashUpdate,
     db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_admin_investor),
 ) -> schemas.CashBalance:
     cash = crud.update_cash_balance(db, payload.amount)
     return schemas.CashBalance(

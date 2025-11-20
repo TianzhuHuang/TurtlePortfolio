@@ -13,13 +13,14 @@ import {
   type FundSummary,
   type HoldingsResponse,
   type Investor,
-} from "../lib/api";
-import { FundChart } from "../components/FundChart";
-import { HoldingsPieChart } from "../components/HoldingsPieChart";
-import { HoldingsTable } from "../components/HoldingsTable";
-import { InvestorsTable } from "../components/InvestorsTable";
-import { SummaryCards } from "../components/SummaryCards";
-import { UploadPanel } from "../components/UploadPanel";
+} from "@/lib/api";
+import { UserMenu } from "@/components/UserMenu";
+import { FundChart } from "@/components/FundChart";
+import { HoldingsPieChart } from "@/components/HoldingsPieChart";
+import { HoldingsTable } from "@/components/HoldingsTable";
+import { InvestorsTable } from "@/components/InvestorsTable";
+import { SummaryCards } from "@/components/SummaryCards";
+import { UploadPanel } from "@/components/UploadPanel";
 
 export default function HomePage() {
   const [summary, setSummary] = useState<FundSummary | null>(null);
@@ -76,15 +77,23 @@ export default function HomePage() {
   return (
     <div className="space-y-10">
       <header className="space-y-2 text-center">
-        <p className="text-sm uppercase tracking-[0.35em] text-sky-400/80">
-          Turtle Portfolio
-        </p>
-        <h1 className="text-3xl font-semibold tracking-wide text-slate-100 sm:text-4xl">
-          乌龟基金每日净值仪表盘
-        </h1>
-        <p className="text-sm text-slate-400">
-          实时监控基金净值、持仓结构与投资人份额，支持自动同步与截图上传。
-        </p>
+        <div className="flex justify-between items-start">
+          <div></div>
+          <div>
+            <p className="text-sm uppercase tracking-[0.35em] text-sky-400/80">
+              Turtle Portfolio
+            </p>
+            <h1 className="text-3xl font-semibold tracking-wide text-slate-100 sm:text-4xl">
+              乌龟基金每日净值仪表盘
+            </h1>
+            <p className="text-sm text-slate-400">
+              实时监控基金净值、持仓结构与投资人份额，支持自动同步与截图上传。
+            </p>
+          </div>
+          <div>
+            <UserMenu />
+          </div>
+        </div>
       </header>
 
       <SummaryCards

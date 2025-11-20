@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { InvestorsAdminPanel } from "../../components/InvestorsAdminPanel";
 import { fetchFundSummary } from "../../lib/api";
+import { UserMenu } from "../../components/UserMenu";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -27,9 +28,13 @@ export default function AdminPage() {
   return (
     <div className="space-y-8">
       <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-semibold tracking-wide text-slate-100">
-          投资人后台管理
-        </h1>
+        <div className="flex justify-between items-center">
+          <div></div>
+          <h1 className="text-3xl font-semibold tracking-wide text-slate-100">
+            投资人后台管理
+          </h1>
+          <UserMenu />
+        </div>
         <p className="text-sm text-slate-400">
           管理投资人资料、份额及初始投资额。后续可接入鉴权和操作日志。
         </p>
@@ -44,4 +49,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

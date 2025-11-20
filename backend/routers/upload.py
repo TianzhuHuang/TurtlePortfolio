@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from .. import crud, schemas
 from ..database import get_db
+from ..routers.dependencies import get_current_admin_investor
+from .. import models
 from ..utils.ocr_parser import parse_account_screenshot
 from ..utils.tushare_client import fetch_holdings
 
@@ -117,7 +119,10 @@ def _aggregate_holdings_from_files(files: list[UploadFile]) -> list[schemas.Hold
 
 
 @router.post("/tushare", response_model=schemas.FundSummary)
-def refresh_from_tushare(db: Session = Depends(get_db)) -> schemas.FundSummary:
+def refresh_from_tushare(
+    db: Session = Depends(get_db), 
+    current_investor: models.Investor = Depends(get_current_admin_investor)
+) -> schemas.FundSummary:
     """
     Attempt to pull the latest holdings from the configured Tushare account.
     """
@@ -137,6 +142,7 @@ async def preview_screenshot(
     files: list[UploadFile] = File(...),
     holdings_date: Optional[date] = None,
     db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_admin_investor),
 ) -> schemas.UploadPreviewResponse:
     """
     Parse the uploaded screenshot and return holdings for client confirmation.
@@ -164,6 +170,7 @@ async def upload_screenshot(
     files: list[UploadFile] = File(...),
     holdings_date: Optional[date] = None,
     db: Session = Depends(get_db),
+    current_investor: models.Investor = Depends(get_current_admin_investor),
 ) -> schemas.UploadResponse:
     """
     Accept a broker screenshot, parse it via OCR, and update holdings for the selected date.

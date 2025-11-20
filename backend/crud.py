@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from typing import Iterable, List, Optional
 import secrets
+import bcrypt
 
 from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
@@ -11,17 +12,30 @@ from loguru import logger
 
 from . import models, schemas
 
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hashes a password using bcrypt."""
+    # Convert the string password to bytes, which bcrypt requires
+    password_bytes = password.encode('utf-8')
+
+    # Generate a salt (this includes the cost factor and is stored with the hash)
+    # The default cost (12) is generally a good balance.
+    salt = bcrypt.gensalt()
+
+    # Hash the password
+    hashed_password_bytes = bcrypt.hashpw(password_bytes, salt)
+
+    return str(hashed_password_bytes, "utf-8")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(password: str, hashed_password: str) -> bool:
+    """Verifies a password against a stored bcrypt hash."""
+    # Convert the string password to bytes
+    password_bytes = password.encode("utf-8")
+
+    # Use bcrypt.checkpw to compare the password with the stored hash
+    # It extracts the salt/cost from the stored hash automatically.
+    return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
 
 
 def get_latest_holdings(db: Session) -> Optional[schemas.HoldingsResponse]:
@@ -39,7 +53,7 @@ def get_latest_holdings(db: Session) -> Optional[schemas.HoldingsResponse]:
         .where(models.Holding.date == latest_date)
         .order_by(desc(models.Holding.market_value))
     )
-    holdings = [holding for holding, in db.execute(holding_stmt)]
+    holdings = [holding for holding, in db.execute(holdings_stmt)]
     total_value = sum(h.market_value for h in holdings)
     return schemas.HoldingsResponse(
         date=latest_date,
@@ -149,6 +163,9 @@ def update_investor(
         update_data["identifier"] = raw_identifier.strip() or None
         
     for field, value in update_data.items():
+        if field == "password":
+            investor.password_hash = get_password_hash(value)
+            continue
         setattr(investor, field, value)
         
     db.commit()
@@ -176,7 +193,7 @@ def create_investor_token(
     investor_id: int, 
     user_agent: Optional[str] = None, 
     ip_address: Optional[str] = None,
-    expires_in: int = 24 * 60 * 60  # 默认24小时
+    expires_in: int = 90 * 24 * 60 * 60  # 默认90天
 ) -> models.InvestorToken:
     """创建一个新的投资者令牌"""
     token = secrets.token_urlsafe(32)  # 生成安全的随机令牌

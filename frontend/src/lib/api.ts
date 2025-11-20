@@ -8,6 +8,33 @@ export const apiClient = axios.create({
   timeout: 45000,
 });
 
+// 添加请求拦截器来设置认证token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("user-token") : null;
+    if (token) {
+      config.headers["user-token"] = token;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+apiClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response.status === 401) {
+      localStorage.removeItem("user-token");
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface FundSummary {
   date: string;
   nav: number;
@@ -43,6 +70,7 @@ export interface Investor {
   current_value: number;
   created_at: string;
   updated_at: string;
+  is_admin?: boolean;
 }
 
 export interface FundHistory extends FundSummary {
@@ -70,6 +98,27 @@ export interface CashBalance {
   amount: number;
   updated_at: string;
   created_at: string;
+}
+
+// 登录相关接口
+export interface LoginRequest {
+  identifier: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  investor: Investor;
+  token: {
+    id: number;
+    token: string;
+    investor_id: number;
+    expires_at: string;
+    last_used_at: string | null;
+    user_agent: string | null;
+    ip_address: string | null;
+    created_at: string;
+    updated_at: string;
+  };
 }
 
 export const fetchFundSummary = async (): Promise<FundSummary | null> => {
@@ -168,3 +217,27 @@ export const updateCashBalance = async (amount: number): Promise<CashBalance> =>
   return data;
 };
 
+// 登录相关 API
+export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
+  const { data } = await apiClient.post<LoginResponse>("/auth/login", payload);
+  return data;
+};
+
+export const logout = async (): Promise<void> => {
+  await apiClient.post("/auth/logout");
+};
+
+export const getCurrentInvestor = async (): Promise<Investor> => {
+  const { data } = await apiClient.get<Investor>("/investors/me");
+  return data;
+};
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
+export const changePassword = async (payload: ChangePasswordRequest): Promise<Investor> => {
+  const { data } = await apiClient.put<Investor>("/auth/change-password", payload);
+  return data;
+};
