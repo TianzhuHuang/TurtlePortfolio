@@ -68,6 +68,7 @@ export interface Investor {
   shares: number;
   initial_investment: number;
   current_value: number;
+  today_value: number;
   created_at: string;
   updated_at: string;
   is_admin?: boolean;

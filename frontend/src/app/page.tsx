@@ -9,6 +9,7 @@ import {
   fetchHoldings,
   fetchInvestors,
   updateCashBalance,
+  getCurrentInvestor,
   type FundHistory,
   type FundSummary,
   type HoldingsResponse,
@@ -21,6 +22,8 @@ import { HoldingsTable } from "@/components/HoldingsTable";
 import { InvestorsTable } from "@/components/InvestorsTable";
 import { SummaryCards } from "@/components/SummaryCards";
 import { UploadPanel } from "@/components/UploadPanel";
+import { InvestorSummaryCards } from "@/components/InvestorSummaryCards.tsx";
+import dayjs from "dayjs";
 
 export const HomePage = () => {
   const [summary, setSummary] = useState<FundSummary | null>(null);
@@ -29,17 +32,19 @@ export const HomePage = () => {
   const [history, setHistory] = useState<FundHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [cash, setCash] = useState(0);
+  const [currentUser, setCurrentUser] = useState<any>(null); // 添加当前用户状态
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [summaryData, holdingsData, investorsData, historyData, cashData] =
+      const [summaryData, holdingsData, investorsData, historyData, cashData, userData] =
         await Promise.allSettled([
           fetchFundSummary(),
           fetchHoldings(),
           fetchInvestors(),
           fetchFundHistory(),
           fetchCashBalance(),
+          getCurrentInvestor(), // 获取当前用户信息
         ]);
 
       if (summaryData.status === "fulfilled") {
@@ -56,6 +61,9 @@ export const HomePage = () => {
       }
       if (cashData.status === "fulfilled") {
         setCash(cashData.value.amount);
+      }
+      if (userData.status === "fulfilled") {
+        setCurrentUser(userData.value); // 设置当前用户
       }
     } finally {
       setIsLoading(false);
@@ -74,6 +82,9 @@ export const HomePage = () => {
     loadData();
   }, [loadData]);
 
+  // 判断是否是管理员用户
+  const isAdmin = currentUser?.is_admin === true;
+
   return (
     <div className="space-y-10">
       <header className="space-y-2 text-center">
@@ -86,20 +97,20 @@ export const HomePage = () => {
             <h1 className="text-3xl font-semibold tracking-wide text-slate-100 sm:text-4xl">
               乌龟基金每日净值仪表盘
             </h1>
-            <p className="text-sm text-slate-400">
-              实时监控基金净值、持仓和投资人份额，支持自动同步与截图上传。
+            <p className="text-sm text-slate-500" style={{ marginTop: "0.5rem", fontSize: '15px' }}>
+              更新于 {summary?.date ? dayjs(summary.date).format("YYYY/MM/DD") : "--"}
             </p>
           </div>
           <div>
-            <UserMenu />
+            <UserMenu/>
           </div>
         </div>
       </header>
 
-      <SummaryCards
+      {isAdmin ? (<SummaryCards
         summary={summary}
         updatedAt={history.at(-1)?.created_at}
-      />
+      />) : (<InvestorSummaryCards summary={summary} investor={currentUser || {}}></InvestorSummaryCards>)}
 
       <section className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
@@ -118,17 +129,23 @@ export const HomePage = () => {
           onSaveCash={handleCashSave}
           totalAssets={summary?.total_value ?? 0}
         />
-        <InvestorsTable investors={investors} nav={summary?.nav} />
-      </section>
-
-      <section className="space-y-3">
-        <UploadPanel onRefresh={loadData} />
-        {isLoading && (
-          <p className="text-center text-xs text-slate-500">
-            正在刷新数据，请稍候...
-          </p>
+        {/* 仅对管理员用户展示 InvestorsTable */}
+        {isAdmin && (
+          <InvestorsTable investors={investors} nav={summary?.nav} />
         )}
       </section>
+
+      {/* 仅对管理员用户展示 UploadPanel */}
+      {isAdmin && (
+        <section className="space-y-3">
+          <UploadPanel onRefresh={loadData} />
+          {isLoading && (
+            <p className="text-center text-xs text-slate-500">
+              正在刷新数据，请稍候...
+            </p>
+          )}
+        </section>
+      )}
 
       <footer className="text-center text-xs text-slate-500">
         最近一次更新：
