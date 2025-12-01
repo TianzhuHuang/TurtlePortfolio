@@ -22,7 +22,7 @@ import { InvestorsTable } from "@/components/InvestorsTable";
 import { SummaryCards } from "@/components/SummaryCards";
 import { UploadPanel } from "@/components/UploadPanel";
 
-export default function HomePage() {
+export const HomePage = () => {
   const [summary, setSummary] = useState<FundSummary | null>(null);
   const [holdings, setHoldings] = useState<HoldingsResponse | null>(null);
   const [investors, setInvestors] = useState<Investor[]>([]);
@@ -87,7 +87,7 @@ export default function HomePage() {
               乌龟基金每日净值仪表盘
             </h1>
             <p className="text-sm text-slate-400">
-              实时监控基金净值、持仓结构与投资人份额，支持自动同步与截图上传。
+              实时监控基金净值、持仓和投资人份额，支持自动同步与截图上传。
             </p>
           </div>
           <div>
@@ -143,4 +143,6 @@ export default function HomePage() {
       </footer>
     </div>
   );
-}
+};
+
+export default HomePage;

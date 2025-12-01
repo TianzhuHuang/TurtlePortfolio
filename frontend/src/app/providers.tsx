@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // 检查是否存在有效的认证token
@@ -13,18 +14,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem("user-token");
       
       // 如果在需要认证的页面但没有token，则重定向到登录页
-      // const protectedRoutes = ["/admin"];
-      // const isProtectedRoute = protectedRoutes.some(route =>
-      //   window.location.pathname.startsWith(route)
-      // );
+      const protectedRoutes = ["/admin"];
+      const isProtectedRoute = protectedRoutes.some(route =>
+        location.pathname.startsWith(route)
+      );
 
       // 对于所有需要认证的页面（除了登录页本身），检查认证状态
-      if (!token && (window.location.pathname !== "/login")) {
-        router.push("/login");
+      if ((!token && isProtectedRoute) || (!token && location.pathname === "/admin")) {
+        navigate("/login");
       } 
       // 如果在登录页但已经登录，则重定向到主页
-      else if (token && window.location.pathname === "/login") {
-        router.push("/");
+      else if (token && location.pathname === "/login") {
+        navigate("/");
       }
     };
 
@@ -34,9 +35,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "user-token") {
         if (!e.newValue) {
-          router.push("/login");
-        } else if (window.location.pathname === "/login") {
-          router.push("/");
+          navigate("/login");
+        } else if (location.pathname === "/login") {
+          navigate("/");
         }
       }
     };
@@ -46,7 +47,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [router]);
+  }, [location, navigate]);
 
   return <>{children}</>;
 }

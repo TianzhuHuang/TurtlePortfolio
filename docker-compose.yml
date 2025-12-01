@@ -12,15 +12,3 @@ services:
       - "9380:8000"
     working_dir: /app
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
-    depends_on:
-      - backend
-    ports:
-      - "3000:3000"
-    command: npm run dev

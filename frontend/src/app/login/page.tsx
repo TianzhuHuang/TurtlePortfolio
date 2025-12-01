@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { login } from "@/lib/api";
 
 interface LoginForm {
@@ -9,8 +9,8 @@ interface LoginForm {
   password: string;
 }
 
-export default function LoginPage() {
-  const router = useRouter();
+export const LoginPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginForm>({
     identifier: "",
     password: "",
@@ -36,8 +36,7 @@ export default function LoginPage() {
       localStorage.setItem("user-token", token.token);
 
       // Redirect to home page
-      router.push("/");
-      router.refresh();
+      navigate("/");
     } catch (err: any) {
       console.error("Login failed:", err);
       if (err.response?.status === 401) {
@@ -116,4 +115,6 @@ export default function LoginPage() {
       </div>
     </div>
   );
-}
+};
+
+export default LoginPage;

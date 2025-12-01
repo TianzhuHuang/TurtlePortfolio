@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { logout } from "@/lib/api";
 import axios from "axios";
 
@@ -14,7 +14,7 @@ export interface ChangePasswordForm {
 }
 
 export function UserMenu() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [user, setUser] = useState<Investor | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,8 +45,7 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     localStorage.removeItem("user-token");
-    router.push("/login");
-    router.refresh();
+    navigate("/login");
 
     await logout();
   };
@@ -150,7 +149,7 @@ export function UserMenu() {
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  router.push("/");
+                  navigate("/");
                 }}
                 className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
               >
@@ -161,7 +160,7 @@ export function UserMenu() {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    router.push("/admin");
+                    navigate("/admin");
                   }}
                   className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
                 >

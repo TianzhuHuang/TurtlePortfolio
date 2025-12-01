@@ -134,7 +134,7 @@ export const fetchHoldings = async (): Promise<HoldingsResponse | null> => {
 };
 
 export const fetchInvestors = async (): Promise<Investor[]> => {
-  const { data } = await apiClient.get<Investor[]>("/investors");
+  const { data } = await apiClient.get<Investor[]>("/investors/");
   return data;
 };
 

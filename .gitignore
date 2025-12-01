@@ -22,4 +22,6 @@ backend/__pycache__/
 backend/log_output/
 backend/uvicorn.log
 *.log
+frontend.tar.gz
+backend.tar.gz
 

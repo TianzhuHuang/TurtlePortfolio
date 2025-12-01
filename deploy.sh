@@ -4,13 +4,11 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Starting Turtle Portfolio Deployment..."
-
 # Configuration
 REMOTE_SERVER="syh-prod"
 REMOTE_USER="root"
 REMOTE_PATH="/home/web/release/turtle"
-FRONTEND_BUILD_DIR="frontend/out"
+FRONTEND_BUILD_DIR="frontend/dist"
 BACKEND_DIR="backend"
 
 # Colors for output
@@ -32,6 +30,19 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+# Show help
+show_help() {
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "Options:"
+    echo "  -f, --frontend    Deploy frontend only"
+    echo "  -b, --backend     Deploy backend only"
+    echo "  -a, --all         Deploy both frontend and backend (default)"
+    echo "  -h, --help        Show this help message"
+    echo ""
+    echo "If no option is specified, deploys both frontend and backend."
+}
+
 # Check if running from project root
 if [ ! -d "frontend" ] || [ ! -d "backend" ]; then
     print_error "Please run this script from the project root directory"
@@ -50,7 +61,7 @@ deploy_frontend() {
     
     # Step 2: Package and upload compiled files
     print_status "Packaging frontend build..."
-    tar -czf frontend.tar.gz -C "$FRONTEND_BUILD_DIR" .
+    tar -czf frontend.tar.gz -C frontend/dist .
     
     print_status "Uploading frontend to remote server..."
     scp frontend.tar.gz "$REMOTE_USER@$REMOTE_SERVER:$REMOTE_PATH/frontend/"
@@ -62,6 +73,7 @@ deploy_frontend() {
         tar -xzf frontend.tar.gz
         rm frontend.tar.gz
     "
+    rm frontend.tar.gz
     
     print_status "Frontend deployed successfully!"
 }
@@ -77,8 +89,7 @@ deploy_backend() {
         --exclude='.git' \
         --exclude='*.log' \
         --exclude='node_modules' \
-        --exclude='.next' \
-        --exclude='out' \
+        --exclude='dist' \
         -czf backend.tar.gz "$BACKEND_DIR"
     
     # Step 2: Upload to remote server
@@ -92,6 +103,8 @@ deploy_backend() {
         tar -xzf backend.tar.gz
         rm backend.tar.gz
     "
+    
+    rm backend.tar.gz
     
     print_status "Backend deployed successfully!"
 }
@@ -121,22 +134,71 @@ main() {
     echo " Turtle Portfolio Deployment"
     echo "========================================"
     
+    # Parse command line arguments
+    DEPLOY_FRONTEND=false
+    DEPLOY_BACKEND=false
+    
+    # If no arguments provided, deploy everything
+    if [ $# -eq 0 ]; then
+        DEPLOY_FRONTEND=true
+        DEPLOY_BACKEND=true
+    fi
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -f|--frontend)
+                DEPLOY_FRONTEND=true
+                shift
+                ;;
+            -b|--backend)
+                DEPLOY_BACKEND=true
+                shift
+                ;;
+            -a|--all)
+                DEPLOY_FRONTEND=true
+                DEPLOY_BACKEND=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
     START_TIME=$(date +%s)
     
-    deploy_frontend
-    echo ""
+    if [ "$DEPLOY_FRONTEND" = true ]; then
+        deploy_frontend
+        echo ""
+    fi
     
-    deploy_backend
-    echo ""
+    if [ "$DEPLOY_BACKEND" = true ]; then
+        deploy_backend
+        echo ""
+    fi
     
-    reload_services
-    echo ""
+    # Always reload services if deploying either frontend or backend
+    if [ "$DEPLOY_FRONTEND" = true ] || [ "$DEPLOY_BACKEND" = true ]; then
+        reload_services
+        echo ""
+    fi
     
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     
     echo "========================================"
-    print_status "🎉 Deployment completed successfully in ${DURATION} seconds!"
+    if [ "$DEPLOY_FRONTEND" = true ] || [ "$DEPLOY_BACKEND" = true ]; then
+        print_status "🎉 Deployment completed successfully in ${DURATION} seconds!"
+    else
+        print_warning "Nothing was deployed. Use -h or --help for usage information."
+    fi
     echo "========================================"
 }
 
