@@ -44,7 +44,7 @@ def login(
 
 @router.post("/logout")
 def logout(
-    token: str = Header(None),
+    token: Optional[str] = Header(None, alias="user-token"),
     db: Session = Depends(get_db)
 ) -> dict:
     # 检查令牌是否存在
@@ -67,7 +67,7 @@ def logout(
 @router.put("/change-password", response_model=schemas.InvestorRead)
 def change_password(
     payload: schemas.ChangePasswordRequest,
-    token: str = Header(alias="user-token"),
+    token: Optional[str] = Header(None, alias="user-token"),
     db: Session = Depends(get_db)
 ) -> schemas.InvestorRead:
     # 检查令牌是否存在

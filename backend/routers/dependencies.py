@@ -6,7 +6,7 @@ from .. import crud, models
 from ..database import get_db
 
 
-def get_current_investor(token: str = Header(alias="user-token"), db: Session = Depends(get_db)) -> models.Investor:
+def get_current_investor(token: str = Header(alias="user-token", default=None), db: Session = Depends(get_db)) -> models.Investor:
     """
     从header中获取当前用户
     """
@@ -20,7 +20,7 @@ def get_current_investor(token: str = Header(alias="user-token"), db: Session = 
     return investor_token.investor
 
 
-def get_current_admin_investor(token: str = Header(alias="user-token"), db: Session = Depends(get_db)) -> models.Investor:
+def get_current_admin_investor(token: str = Header(alias="user-token", default=None), db: Session = Depends(get_db)) -> models.Investor:
     """
     从header中获取当前管理员用户
     """

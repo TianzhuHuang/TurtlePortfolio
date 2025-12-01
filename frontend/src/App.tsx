@@ -28,14 +28,8 @@ const AppRoutes: React.FC = () => {
     const checkAuth = () => {
       const token = localStorage.getItem("user-token");
 
-      // 如果在需要认证的页面但没有token，则重定向到登录页
-      const protectedRoutes = ["/admin"];
-      const isProtectedRoute = protectedRoutes.some(route =>
-        location.pathname.startsWith(route)
-      );
-
       // 对于所有需要认证的页面（除了登录页本身），检查认证状态
-      if ((!token && isProtectedRoute) || (!token && location.pathname === "/admin")) {
+      if ((!token && location.pathname !== "/login")) {
         navigate("/login");
       } 
       // 如果在登录页但已经登录，则重定向到主页
