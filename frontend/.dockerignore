@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.npm-cache/
+
+# Build outputs
+.next/
+out/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Local environment files
+.env*
+!.env.example
+
+# Testing
+coverage/
+.nyc_output/
+
+# Git
+.git/
+
+# Ignore Dockerfiles
+Dockerfile
+.dockerignore
+
+# Turborepo
+.turbo/
+
+# Ignore package-lock.json in builds
+package-lock.json

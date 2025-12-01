@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+log_output/
+uvicorn.log
+
+# Test coverage
+.htmlcov/
+.coverage
+.coverage.*
+
+# MyPy and pytest cache
+.mypy_cache/
+.pytest_cache/
+
+# Local development files
+.env
+.env.local
+
+# Uploaded files
+uploads/
+
+# Data files
+data/
+
+# Ignore git files
+.git/
+
+# Ignore Dockerfiles
+Dockerfile
+.dockerignore
