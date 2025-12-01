@@ -8,14 +8,6 @@ export interface SummaryCardsProps {
   updatedAt?: string;
 }
 
-const formatNumber = (value?: number | null, fractionDigits = 2) => {
-  if (value === null || value === undefined) return "--";
-  return value.toLocaleString("zh-CN", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  });
-};
-
 const ColoredNumber = ({ 
   value, 
   fractionDigits = 2,

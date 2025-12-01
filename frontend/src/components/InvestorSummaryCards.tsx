@@ -1,6 +1,5 @@
 "use client";
 
-import dayjs from "dayjs";
 import type {FundSummary, Investor} from "../lib/api";
 
 export interface SummaryCardsProps {
@@ -8,14 +7,6 @@ export interface SummaryCardsProps {
   investor: Investor;
   updatedAt?: string;
 }
-
-const formatNumber = (value?: number | null, fractionDigits = 2) => {
-  if (value === null || value === undefined) return "--";
-  return value.toLocaleString("zh-CN", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  });
-};
 
 const ColoredNumber = ({ 
   value, 
@@ -49,15 +40,7 @@ const ColoredNumber = ({
   );
 };
 
-export function InvestorSummaryCards({ investor, summary, updatedAt }: SummaryCardsProps) {
-  const totalAssets =
-    summary && typeof summary.total_value === "number"
-      ? summary.total_value
-      : undefined;
-  const cashAmount = summary?.cash ?? 0;
-  const holdingsValue =
-    typeof totalAssets === "number" ? totalAssets - cashAmount : undefined;
-
+export function InvestorSummaryCards({ investor, summary }: SummaryCardsProps) {
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur">
