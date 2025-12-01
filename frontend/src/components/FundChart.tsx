@@ -99,7 +99,7 @@ export function FundChart({ history }: FundChartProps) {
               },
               tooltip: {
                 callbacks: {
-                  label: (context) => `净值: ${context.parsed.y.toFixed(4)}`,
+                  label: (context) => `净值: ${context.parsed.y?.toFixed(4)}`,
                 },
                 intersect: false,
               },
